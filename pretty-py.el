@@ -386,7 +386,7 @@ function."
   "Automatically run pretty-py-buffer before saving."
   :lighter "pretty-py"
   (if pretty-py-mode
-      (add-hook 'before-save-hook 'pretty-py-before-save)))
+      (add-hook 'before-save-hook #'pretty-py--before-save)))
 
 (provide 'pretty-py)
 
