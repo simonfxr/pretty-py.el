@@ -22,7 +22,7 @@
 (require 'url)
 
 (defcustom pretty-py-formatter 'yapf
-  "If true use black instead of yapf"
+  "If true use black instead of yapf."
   :type '(choice
           (const :tag "yapf" yapf)
           (const :tag "autopep8" autopep8)
@@ -30,7 +30,7 @@
   :group 'pretty-py)
 
 (defcustom pretty-py-autopep8-command "autopep8"
-  "The 'autopep8' command"
+  "The 'autopep8' command."
   :type 'string
   :group 'pretty-py)
 
@@ -40,7 +40,7 @@
   :group 'pretty-py)
 
 (defcustom pretty-py-yapf-command "yapf"
-  "The 'yapf' command"
+  "The 'yapf' command."
   :type 'string
   :group 'pretty-py)
 
@@ -50,40 +50,40 @@
   :group 'pretty-py)
 
 (defcustom pretty-py-black-command "black"
-  "The 'black' command"
+  "The 'black' command."
   :type 'string
   :group 'pretty-py)
 
 (defcustom pretty-py-black-args ()
-  "Additional arguments to pass to black. Cannot be passed when
-using the http daemon."
+  "Additional arguments to pass to black.
+Cannot be passed when using the http daemon."
   :type '(repeat string)
   :group 'pretty-py)
 
 (defcustom pretty-py-blackd-command "blackd"
-  "The 'blackd' command"
+  "The 'blackd' command."
   :type 'string
   :group 'pretty-py)
 
 (defcustom pretty-py-black-fast-flag t
-  "If true use pass --fast to black/blackd."
+  "Non-nil means to pass --fast to black/blackd."
   :type 'boolean
   :group 'pretty-py)
 
 (defcustom pretty-py-black-line-length nil
-  "If set, pass --line-length=x to black/blackd"
-  :type 'boolean
+  "If set, pass --line-length=x to black/blackd."
+  :type '(choice
+          (integer :tag "Fixed line length")
+          (const :tag "Automatic" nil))
   :group 'pretty-py)
 
 (defcustom pretty-py-use-blackd nil
-  "If true and black is used for formatting, use the blackd
-daemon instaed of the commandline program"
+  "Non-nil means to use the blackd http daemon instead of the black commandline program whenever black is used for formatting."
   :type 'boolean
   :group 'pretty-py)
 
 (defcustom pretty-py-blackd-startup-wait-seconds nil
-  "The amount of time to wait for blackd to startup before
-  sending the first request."
+  "The amount of time to wait for blackd to startup before sending the first request."
   :type 'integer
   :group 'pretty-py)
 
@@ -231,6 +231,7 @@ if used from inside a `before-save-hook'."
     (pretty-py-buffer)))
 
 (defun pretty-py--process-errors (fmt-tool-name filename tmp-file err-buf)
+  "Post process errors to ERR-BUF in TMP-FILE from running FMT-TOOL-NAME on FILENAME."
   (with-current-buffer err-buf
     (if (eq pretty-py-show-errors 'echo)
         (progn
@@ -249,6 +250,7 @@ if used from inside a `before-save-hook'."
       (display-buffer err-buf))))
 
 (defun pretty-py--kill-error-buffer (err-buf)
+  "Hide Window showing ERR-BUF and kill the buffer."
   (let ((win (get-buffer-window err-buf)))
     (if win
         (quit-window t win)
@@ -275,6 +277,7 @@ if used from inside a `before-save-hook'."
           temporary-file-directory)))))
 
 (defun pretty-py--goto-line (line)
+  "Like (goto-line LINE) but zero based."
   (goto-char (point-min))
   (forward-line (1- line)))
 
@@ -306,6 +309,7 @@ function."
 
 
 (defun pretty-py--ensure-blackd ()
+  "Start blackd on demand if it is not yet running."
   (unless (and pretty-py--blackd-process
                (process-live-p pretty-py--blackd-process))
     (let ((process-connection-type nil))
@@ -319,14 +323,15 @@ function."
 
 ;;;###autoload
 (defun pretty-py-stop-blackd ()
-  "Stop the blackd daemon if it is running"
+  "Stop the blackd daemon if it is running."
   (interactive)
   (when pretty-py--blackd-process
     (delete-process pretty-py--blackd-process)
     (ignore-errors (kill-buffer "*blackd*"))
     (setq pretty-py--blackd-process nil)))
 
-(defun pretty-py--via-http (contents inp-file err-buf)
+(defun pretty-py--via-http (contents out-file err-buf)
+  "Make a http request to blackd formatting CONTENTS to OUT-FILE, errors appear in ERR-BUF."
   (if (eq (pretty-py--ensure-blackd) 'just-started)
       ;; allow daemon to startup
       (sleep-for 'pretty-py-blackd-startup-wait-seconds))
@@ -353,7 +358,7 @@ function."
 
       (case status
         (204 'no-change)
-        (200 (write-region output nil inp-file)
+        (200 (write-region output nil out-file)
              t)
         (t (with-current-buffer err-buf
              (insert output))
@@ -361,6 +366,7 @@ function."
            nil)))))
 
 (defun pretty-py--via-program (inp-file err-buf)
+  "Format INP-FILE with the chose format program. Errors appear in ERR-BUF."
   (let ((tool-name (symbol-name pretty-py-formatter)) tool-bin tool-args)
     (case pretty-py-formatter
       (yapf
@@ -390,8 +396,8 @@ function."
       (message "Running %s failed" tool-name)
       nil)))
 
-(defun pretty-py-before-save ()
-  (interactive)
+(defun pretty-py--before-save ()
+  "Hook run from `before-save-hook'."
   (if pretty-py-mode
       (pretty-py-buffer)))
 
