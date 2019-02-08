@@ -159,7 +159,7 @@ if used from inside a `before-save-hook'."
 (defun pretty-py-buffer ()
   "Format the current buffer according to the formatting tool."
   (interactive)
-  (let ((tmp-file (pretty-py--make-nearby-temp-file "pretty-py-" nil ".py.tmp"))
+  (let ((tmp-file (make-nearby-temp-file "pretty-py-" nil ".py.tmp"))
         (patch-buf (get-buffer-create "*pretty-py patch*"))
         (err-buf (if pretty-py-show-errors (get-buffer-create "*pretty-py errors*")))
         (coding-system-for-read 'utf-8)
@@ -242,7 +242,7 @@ if used from inside a `before-save-hook'."
       (insert (format "%s errors:\n" fmt-tool-name))
       (let ((truefile tmp-file))
         (while (search-forward-regexp
-                (concat "^\\(" (regexp-quote (pretty-py--file-local-name truefile))
+                (concat "^\\(" (regexp-quote (file-local-name truefile))
                         "\\):")
                 nil t)
           (replace-match (file-name-nondirectory filename) t t nil 1)))
@@ -255,26 +255,6 @@ if used from inside a `before-save-hook'."
     (if win
         (quit-window t win)
       (kill-buffer err-buf))))
-
-(defalias 'pretty-py--file-local-name
-  (if (fboundp 'file-local-name) #'file-local-name
-    (lambda (file) (or (file-remote-p file 'localname) file))))
-
-(defalias 'pretty-py--make-nearby-temp-file
-  (if (fboundp 'make-nearby-temp-file) #'make-nearby-temp-file
-    (lambda (prefix &optional dir-flag suffix)
-      (let ((temporary-file-directory (pretty-py--temporary-file-directory)))
-        (make-temp-file prefix dir-flag suffix)))))
-
-(defalias 'pretty-py--temporary-file-directory
-  (if (fboundp 'temporary-file-directory) #'temporary-file-directory
-    (lambda ()
-      (let ((remote (file-remote-p default-directory)))
-        (if remote
-            ;; Assume that /tmp is a temporary directory on the remote host.
-            ;; This won’t work on Windows.
-            (concat remote "/tmp")
-          temporary-file-directory)))))
 
 (defun pretty-py--goto-line (line)
   "Like (goto-line LINE) but zero based."
