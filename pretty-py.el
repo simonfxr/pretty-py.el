@@ -1,4 +1,4 @@
-;;; pretty-py.el --- Format Python code using yapf or black -*- lexical-binding: t; -*-
+;;; pretty-py.el --- Format Python code using yapf, autopep8 or black -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -12,11 +12,10 @@
 ;; Author: Simon Reiser, the go-mode Authors
 ;; Version: 0.1.0
 ;; Keywords: languages python yapf black
-;; URL: FIXME
+;; Package-Requires: ((emacs "25.1"))
+;; URL: https://github.com/simonfxr/pretty-py.el
 ;;
 ;; This file is not part of GNU Emacs.
-
-;; TODO: add support for autopep8
 
 ;;; Code:
 
