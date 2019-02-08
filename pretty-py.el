@@ -22,7 +22,7 @@
 (require 'url)
 
 (defcustom pretty-py-formatter 'yapf
-  "If true use black instead of yapf."
+  "Configure your preferred-formatter to use with `pretty-py-buffer'."
   :type '(choice
           (const :tag "yapf" yapf)
           (const :tag "autopep8" autopep8)
@@ -56,7 +56,7 @@
 
 (defcustom pretty-py-black-args ()
   "Additional arguments to pass to black.
-Cannot be passed when using the http daemon."
+Cannot be passed when using the HTTP daemon."
   :type '(repeat string)
   :group 'pretty-py)
 
@@ -78,12 +78,18 @@ Cannot be passed when using the http daemon."
   :group 'pretty-py)
 
 (defcustom pretty-py-use-blackd nil
-  "Non-nil means to use the blackd http daemon instead of the black commandline program whenever black is used for formatting."
+  "Non-nil means to prefer the blackd HTTP daemon over the command line program.
+This flag is only relevant when black is used for formatting."
   :type 'boolean
   :group 'pretty-py)
 
 (defcustom pretty-py-blackd-startup-wait-seconds nil
   "The amount of time to wait for blackd to startup before sending the first request."
+  :type 'integer
+  :group 'pretty-py)
+
+(defcustom pretty-py-blackd-request-timeout-seconds 5
+  "Timeout when making requests to blackd."
   :type 'integer
   :group 'pretty-py)
 
@@ -98,7 +104,7 @@ Cannot be passed when using the http daemon."
   :group 'pretty-py)
 
 (defcustom pretty-py-show-errors 'buffer
-  "Where to display yapf/black error output.
+  "Where to display formatter error output.
 It can either be displayed in its own buffer, in the echo area,
 or not at all. Please note that Emacs outputs to the echo area
 when writing files and will overwrite the formatter's echo output
@@ -327,7 +333,10 @@ function."
       (push `("X-Line-Length" . ,(number-to-string pretty-py-black-line-length))
             url-request-extra-headers))
     (message "Sending request to blackd at %s" url)
-    (let ((buffer (url-retrieve-synchronously url 'silent 'inhibit-cookies))
+    (let ((buffer (url-retrieve-synchronously url
+                                              'silent
+                                              'inhibit-cookies
+                                              pretty-py-blackd-request-timeout-seconds))
           status output)
       (with-current-buffer buffer
         (goto-char (point-min))
